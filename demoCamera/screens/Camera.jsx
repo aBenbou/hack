@@ -89,7 +89,7 @@ const CameraComponent = () => {
     if (image) {
       try {
         const asset = await MediaLibrary.createAssetAsync(image);
-        Alert.alert('Photo saved!', image);
+        Alert.alert('Photo saved!'); //remouved showing img path
         setImage(null);
         getLastSavedImage();
       } catch (err) {
@@ -156,8 +156,8 @@ const CameraComponent = () => {
             <TouchableOpacity onPress={() => previousImage && setImage(previousImage)}>
               <Image source={{ uri: previousImage }} style={styles.previousImage} />
             </TouchableOpacity>
-            <Button icon="camera" size={60} style={{ height: 60 }} onPress={takePicture} />
-            <Button icon="flip-camera-ios" onPress={() => toggleProperty('facing', 'front', 'back')} size={40} />
+            <Button icon="camera" size={80} style={{ height: 80 , right: 10, bottom: 10}} onPress={takePicture} />
+            <Button icon="flip-camera-ios" style={{ bottom: 10}} onPress={() => toggleProperty('facing', 'front', 'back')} size={40} />
           </View>
         </>
       ) : (
