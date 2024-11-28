@@ -3,51 +3,69 @@ import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { LinearGradient } from 'expo-linear-gradient';
 
+const CHART_COLORS = ['#4E7BEE', '#52C49B'];
+
 const TEST_DATA = {
   actual: [
-    { month: 'Jan', amount: 900 },
-    { month: 'Feb', amount: 850 },
-    { month: 'Mar', amount: 1200 },
     { month: 'Apr', amount: 750 },
     { month: 'May', amount: 900 },
-    { month: 'Jun', amount: 800 }
-  ],
-  predicted: [
-    { month: 'Jul', amount: 950 },
-    { month: 'Aug', amount: 1000 },
-    { month: 'Sep', amount: 1100 }
+    { month: 'Jun', amount: 800 },
+    { month: 'Jul', amount: 850 },
+    { month: 'Aug', amount: 950 },
+    { month: 'Sep', amount: 1000 },
+    { month: 'Oct', amount: 880 },
+    { month: 'Nov', amount: 920 }
   ]
 };
+
+const PREDICTION_DATA = [
+  { month: 'Nov', amount: 920 },
+  { month: 'Dec', amount: 966 }
+];
 
 const SpendingTrend = ({ data = null }) => {
   const { width } = useWindowDimensions();
   const displayData = data || TEST_DATA;
   const totalActual = displayData.actual.reduce((sum, item) => sum + item.amount, 0);
 
+  const predictionData = displayData.actual.map((_, index) => {
+    if (index === displayData.actual.length - 1) {
+      return PREDICTION_DATA[0].amount;
+    } else if (index === displayData.actual.length) {
+      return PREDICTION_DATA[1].amount;
+    }
+    return null;
+  });
+  
+  predictionData.push(PREDICTION_DATA[1].amount);
+
   const chartData = {
-    labels: [...displayData.actual.map(d => d.month), ...displayData.predicted.map(d => d.month)],
+    labels: [...displayData.actual.map(d => d.month), 'Dec'],
     datasets: [
       {
         data: displayData.actual.map(d => d.amount),
-        color: (opacity = 1) => `rgba(71, 126, 232, ${opacity})`,
+        color: (opacity = 1) => CHART_COLORS[0],
         strokeWidth: 2
       },
       {
-        data: [...Array(displayData.actual.length).fill(null), ...displayData.predicted.map(d => d.amount)],
-        color: (opacity = 1) => `rgba(86, 192, 146, ${opacity})`,
+        data: predictionData,
+        color: (opacity = 1) => CHART_COLORS[1],
         strokeWidth: 2,
         strokeDasharray: [5, 5]
       }
     ]
   };
 
+  // Legend data
+  const legendItems = [
+    { name: 'Actual', color: CHART_COLORS[0], amount: totalActual },
+    { name: 'Predicted (n+1)', color: CHART_COLORS[1], amount: PREDICTION_DATA[1].amount }
+  ];
+
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <LinearGradient
-          colors={['#ffffff', '#f7f9fc']}
-          style={styles.gradientBackground}
-        >
+        <LinearGradient colors={['#ffffff', '#f7f9fc']} style={styles.gradientBackground}>
           <Text style={styles.title}>Spending Overview</Text>
           <Text style={styles.subtitle}>Total: ${totalActual}</Text>
           
@@ -84,19 +102,16 @@ const SpendingTrend = ({ data = null }) => {
               style={styles.chart}
             />
           </View>
-
+          
           <View style={styles.legendContainer}>
-            {[
-              { label: 'Actual', color: 'rgba(71, 126, 232, 1)', isDashed: false },
-              { label: 'Predicted', color: 'rgba(86, 192, 146, 1)', isDashed: true }
-            ].map((item, index) => (
+            {legendItems.map((item, index) => (
               <View key={index} style={styles.legendItem}>
                 <View style={styles.legendLeftSection}>
-                  <View style={[styles.legendColor, 
-                    { backgroundColor: item.color },
-                    item.isDashed && styles.dashedLine
-                  ]} />
-                  <Text style={styles.legendText}>{item.label}</Text>
+                  <View style={[styles.legendColor, { backgroundColor: item.color }]} />
+                  <Text style={styles.legendCategoryText}>{item.name}</Text>
+                </View>
+                <View style={styles.legendRightSection}>
+                  <Text style={styles.legendAmountText}>${item.amount}</Text>
                 </View>
               </View>
             ))}
@@ -144,42 +159,51 @@ const styles = StyleSheet.create({
   chartContainer: {
     alignItems: 'center',
     marginBottom: 20,
+    height: 210,
+    justifyContent: 'center',
   },
   chart: {
     borderRadius: 16,
-    paddingRight: 40,
   },
   legendContainer: {
     marginTop: 10,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    paddingHorizontal: 10,
+    minHeight: 180,
   },
   legendItem: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginHorizontal: 15,
+    paddingVertical: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    height: 50,
   },
   legendLeftSection: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+  },
+  legendRightSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 120,
+    justifyContent: 'flex-end',
   },
   legendColor: {
-    width: 20,
-    height: 3,
-    borderRadius: 1.5,
-    marginRight: 8,
+    width: 15,
+    height: 15,
+    borderRadius: 15,
+    marginRight: 10,
   },
-  dashedLine: {
-    borderStyle: 'dashed',
-    borderWidth: 1,
-    borderColor: 'rgba(86, 192, 146, 1)',
-    backgroundColor: 'transparent',
+  legendCategoryText: {
+    fontSize: 15,
+    color: '#2D3436',
   },
-  legendText: {
-    fontSize: 14,
-    color: '#636E72',
-    fontWeight: '500',
+  legendAmountText: {
+    fontSize: 15,
+    color: '#2D3436',
+    marginRight: 15,
   }
 });
 
