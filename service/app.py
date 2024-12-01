@@ -1,4 +1,9 @@
 from flask import Flask, jsonify, request
+import xgboost as xgb
+import holidays
+import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
 import os
 import json
 import pymongo
@@ -59,6 +64,51 @@ class MongoPurchase(BaseModel):
     purchase_date: datetime
     total_amount: float
 
+def extract_date(date_string):
+  try:
+    return pd.to_datetime(date_string).date()
+  except ValueError:
+    return None
+
+
+def is_last_two_weeks_of_august(date):
+    """
+    Check if the given date is part of the last two weeks of August.
+    """
+    year = date.year
+    start_of_last_two_weeks = datetime(year, 8, 18).date()  # Start date: August 18
+    end_of_august = datetime(year, 8, 31).date()           # End date: August 31
+    return start_of_last_two_weeks <= date <= end_of_august
+
+def is_n_days_after(given_date, event_date, n):
+    """
+    """
+    return event_date - timedelta(days=n) <=given_date <= event_date
+
+def generate_feature_array(date):
+    feature_array = [0,0,0] # fitr (ramadan), adha, then school year start (in order)
+
+    ma_holidays = holidays.country_holidays('MA', years=[date.year, date.year+1])
+
+    fitr = ma_holidays.get_named('al-Fitr')
+    adha = ma_holidays.get_named('al-Adha')
+
+    for day in fitr:
+      if is_n_days_after(date, day, 35):
+          feature_array[0] = 1
+          break
+
+    for day in adha:
+      if is_n_days_after(date, day, 15):
+           feature_array[1] = 1
+           break
+
+
+    if is_last_two_weeks_of_august(date):
+          feature_array[2] = 1
+
+    return feature_array
+
 def get_recent_purchases(user_id, limit):
     recent_purchases = list(purchases_collection.find(
         {
@@ -84,6 +134,47 @@ def get_similar_products_and_offers(purchased_items):
             discounts.extend(offers)
     
     return similar_products, discounts
+
+def one_hot_encode_category(category_string):
+  """
+  One-hot encodes a category string.
+
+  Args:
+    category_string: The category string to encode.
+
+  Returns:
+    A NumPy array representing the one-hot encoded category.
+  """
+    # all_categories: A list of all possible categories.
+  all_categories = ['Sports', 'Clothing', 'Toys', 'Beauty', 'Books', 'Home & Kitchen', 'Electronics']
+  encoded_category = np.zeros(len(all_categories), dtype=int)
+  index = all_categories.index(category_string)
+  encoded_category[index] = 1
+    
+  return encoded_category
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    # needs a category string + a date of purchase + cost 
+    delta = 0.20
+    observed_cost = request.json['cost']
+    date_of_purchase = extract_date(request.json['date_of_purchase'])
+    category_array = one_hot_encode_category(request.json['category'])
+    input_array = np.array()
+    model = xgb.XGBRegressor()
+    model.load_model('xgboost_model.json')
+    day_array = generate_feature_array(date_of_purchase)
+    input_array = np.concatenate([day_array, category_array])
+    input_array = input_array.reshape(1, -1)
+    predicted_value = model.predict(input_array)
+
+    if predicted_value > observed_cost * (1+delta):
+        return jsonify({"status": "success", "out_of_bounds": True, 'predicted_cost': predicted_value}), 200
+    else:
+        return jsonify({"status": "success", "out_of_bounds": False, 'predicted_cost': predicted_value}), 200
+
+
+
 
 @app.route('/receipt', methods=['POST'])
 def upload_receipt():
