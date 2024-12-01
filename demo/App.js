@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Dashboard from './screens/Dashboard';
 import Camera from './screens/Camera';
+import InputScreen from './screens/input';
 
 // Enable screens for better navigation performance
 enableScreens();
@@ -21,6 +22,7 @@ export default function App() {
           component={Camera} 
           options={{ headerTitle: '' }}
         />
+        <Stack.Screen name="Input" component={InputScreen}  options={{ headerTitle: 'Receipt' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

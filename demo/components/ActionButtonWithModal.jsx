@@ -31,8 +31,9 @@ const ActionButtonWithModal = ({ navigation }) => {
 
   const handleManualPress = () => {
     setModalVisible(false);
-    Alert.alert('Manual Input', 'This feature is coming soon!');
+    navigation.navigate('Input');
   };
+  
 
   return (
     <>

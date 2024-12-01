@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
+import Ionicons from 'react-native-vector-icons/Ionicons';  // Import the icon library
+
 
 const TEST_DATA = {
   actual: [
@@ -113,7 +115,16 @@ const SpendingTrend = ({ data = null }) => {
             <Text style={styles.legendText}>{item.name}: {item.amount}</Text>
           </View>
         ))}
+
+
+
+
       </View>
+       {/* AI Suggested Spending Advice */}
+    <View style={styles.aiAdvice}>
+      <Ionicons name="bulb" size={25} color="#FBC02D" style={styles.icon} /> {/* Yellow Icon */}
+      <Text style={styles.aiText}>AI Suggested Spending Advice: {"Based on your trends, consider reducing spending in October for better savings."}</Text>
+    </View>
     </View>
   );
 };
@@ -154,6 +165,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#333',
   },
+  aiAdvice: {
+    backgroundColor: '#f5f5f5',  // Light gray background
+    padding: 10,
+    marginTop: 60,
+    borderRadius: 5,
+    fontSize: 14,
+    color: '#333',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    textAlign: 'center',
+    flexDirection: 'column',  // Stack the icon and text vertically
+    alignItems: 'center',  // Center the icon and text
+  },
+  
+  icon: {
+    marginBottom: 10,  // Space between the icon and the text
+  },
+  
+  aiText: {
+    fontSize: 14,  // Smaller font size for the text
+    color: '#333',  // Darker text for better readability
+    textAlign: 'center',
+  },
+  
+  
+
 });
 
 export default SpendingTrend;
